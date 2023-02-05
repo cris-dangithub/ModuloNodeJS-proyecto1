@@ -1,79 +1,52 @@
 const Users = require('../models/users.model');
+const AppError = require('../utils/appError');
+const { catchAsync } = require('../utils/catchAsync');
 
-exports.validUserExistsByAccountNumber = async (req, res, next) => {
-  try {
-    const { accountNumber } = req.body;
-    const user = await Users.findOne({
-      where: {
-        accountNumber,
-      },
-    });
-    // si no existe, retornar una respuesta 404
-    if (!user) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'User has not been found',
-      });
-    }
-    req.user = user;
-    next();
-  } catch (error) {
-    res.status(500).json({
-      status: 'fail',
-      message: 'Internal Server Error',
-    });
+exports.validUserExistsByAccountNumber = catchAsync(async (req, res, next) => {
+  const { accountNumber } = req.body;
+  const user = await Users.findOne({
+    where: {
+      accountNumber,
+    },
+  });
+  // si no existe, retornar una respuesta 404
+  if (!user) {
+    return next(new AppError('User has not been found', 404));
   }
-};
+  req.user = user;
+  next();
+});
 
-exports.validUserCredentials = async (req, res, next) => {
-  try {
-    const { password } = req.body;
-    const { user } = req;
-    // validar que el status esté en true;
-    if (!user.status) {
-      return res.status(400).json({
-        status: 'error',
-        message:
-          'The user does not have its account available. Please contact customer service',
-      });
-    }
-    // validar que la contraseña sea la correcta
-    if (user.password !== password) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Incorrect password',
-      });
-    }
-    next();
-  } catch (error) {
-    res.status(500).json({
-      status: 'fail',
-      message: 'Internal Server Error',
-    });
+exports.validUserCredentials = catchAsync(async (req, res, next) => {
+  const { password } = req.body;
+  const { user } = req;
+  // validar que el status esté en true;
+  if (!user.status) {
+    return next(
+      new AppError(
+        'The user does not have its account available. Please contact customer service',
+        400
+      )
+    );
   }
-};
+  // validar que la contraseña sea la correcta
+  if (user.password !== password) {
+    return next(new AppError('Incorrect password', 400));
+  }
+  next();
+});
 
-exports.validUserExistsById = async (req, res, next) => {
-  try {
-    // Verificar que el usuario exista
-    const { id } = req.params;
-    const user = await Users.findOne({
-      where: {
-        id,
-        status: true,
-      },
-    });
-    if (!user) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'User has not been found',
-      });
-    }
-    next();
-  } catch (error) {
-    res.status(500).json({
-      status: 'fail',
-      message: 'Internal Server Error',
-    });
+exports.validUserExistsById = catchAsync(async (req, res, next) => {
+  // Verificar que el usuario exista
+  const { id } = req.params;
+  const user = await Users.findOne({
+    where: {
+      id,
+      status: true,
+    },
+  });
+  if (!user) {
+    return next(new AppError('User has not been found', 404));
   }
-};
+  next();
+});

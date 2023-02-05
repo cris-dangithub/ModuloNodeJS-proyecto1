@@ -4,6 +4,8 @@ const { usersRouter } = require('../routes/users.routes');
 const { transfersRouter } = require('../routes/transfers.routes');
 const { db } = require('../database/db');
 const morgan = require('morgan');
+const AppError = require('../utils/appError');
+const { globalErrorHandler } = require('../controllers/error.controller');
 
 class Server {
   constructor() {
@@ -22,6 +24,12 @@ class Server {
   routes() {
     this.app.use(this.paths.users, usersRouter);
     this.app.use(this.paths.transfers, transfersRouter);
+    // Manejo de errores
+    this.app.use('*', (req, res, next) => {
+      const message = `The url ${req.originalUrl} does not exists in this server`;
+      next(new AppError(message, 404));
+    });
+    this.app.use(globalErrorHandler);
   }
 
   middlewares() {
